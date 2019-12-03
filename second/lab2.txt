@@ -1,0 +1,121 @@
+#include <iostream>
+#include <fstream>
+#include <algorithm>
+#include <random>
+#include <iterator>
+#include <deque>
+
+const long long DEFAULT_NUM_OF_ELEMENTS = 5;
+long long NUM_OF_ELEMENTS = DEFAULT_NUM_OF_ELEMENTS;
+
+struct Bolt {
+    int v;
+};
+struct Nut {
+    int v;
+};
+
+//Compare returns -1 if bolt is too big, 1 if it is too small, 0 if it fits nut;
+int compare(Bolt b, Nut n) {
+    if (b.v>n.v) return -1;
+    if (b.v<n.v) return 1;
+    return 0;
+}
+
+void load_config()
+{
+    std::ifstream config ("c.config");
+    if (config.is_open())
+    {
+        std::string line;
+        while(getline(config, line)){
+            line.erase(std::remove_if(line.begin(), line.end(), ::isspace),
+                                 line.end());
+            if(line[0] == '#' || line.empty())
+                continue;
+            auto delimiterPos = line.find("=");
+            auto name = line.substr(0, delimiterPos);
+            auto value = line.substr(delimiterPos + 1);
+            if (name=="num_of_elements") {
+                NUM_OF_ELEMENTS=std::stoll(value);
+            }
+        }
+        config.close();
+    }
+}
+
+std::deque<Bolt> generate_bolts(int max_n)
+{
+    static std::random_device rd;
+    static std::mt19937 g(rd());
+    std::deque<Bolt> generated;
+    for (int i=0; i<max_n; i++) {
+        generated.push_back(Bolt{i});
+    }
+    std::shuffle(generated.begin(), generated.end(), g);
+    return generated;
+}
+std::deque<Nut> generate_nut(int max_n)
+{
+    static std::random_device rd;
+    static std::mt19937 g(rd());
+    std::deque<Nut> generated;
+    for (int i=0; i<max_n; i++) {
+        generated.push_back(Nut{i});
+    }
+    std::shuffle(generated.begin(), generated.end(), g);
+    return generated;
+}
+
+template <class T>
+void print(std::deque<T> &q)
+{
+    for (auto i: q){
+        std::cout<<i.v<<" ";
+    }
+    std::cout<<std::endl;
+}
+
+void process(std::deque<Bolt> &bolts, std::deque<Nut> &nuts)
+{
+    if (bolts.empty()) return;
+    print(bolts);
+    Bolt found_bolt = bolts[0];
+    bolts.pop_front();
+    Nut found_nut;
+    std::cout<<"FOUND BOLT "<<found_bolt.v<<" ";
+    std::deque<Nut>left_nuts;
+    std::deque<Nut>right_nuts;
+    std::deque<Bolt>left_bolts;
+    std::deque<Bolt>right_bolts;
+    while (!nuts.empty()) {
+        if (compare(found_bolt, nuts[0])==0) {
+            std::cout<<"FOUND NUT "<<nuts[0].v<<std::endl;
+            found_nut = nuts[0];
+        }
+        if (compare(found_bolt, nuts[0])==-1) left_nuts.push_front(nuts[0]);
+        if (compare(found_bolt, nuts[0])==1) right_nuts.push_back(nuts[0]);
+        nuts.pop_front();
+    }
+    while (!bolts.empty()) {
+        if (compare(bolts[0], found_nut)==-1) right_bolts.push_front(bolts[0]);
+        if (compare(bolts[0], found_nut)==1) left_bolts.push_back(bolts[0]);
+        bolts.pop_front();
+    }
+    print(left_bolts);
+    print(right_bolts);
+    process(left_bolts, left_nuts);
+    process(right_bolts, right_nuts);
+}
+
+
+int main()
+{
+    load_config();
+    std::deque<Bolt> bolts = generate_bolts(NUM_OF_ELEMENTS);
+    std::deque<Nut> nuts = generate_nut(NUM_OF_ELEMENTS);
+
+    process(bolts, nuts);
+
+    return 0;
+}

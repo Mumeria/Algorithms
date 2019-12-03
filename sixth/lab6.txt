@@ -1,0 +1,61 @@
+#include <iostream>
+#include <vector>
+
+bool find_in_stirng(std::string sshort, std::string slong)
+{
+    std::vector<int> offset(sshort.size());
+    offset[0] = 0;
+    int i=0;
+    int j=1;
+    while ((i<sshort.size())&&(j<sshort.size())) {
+        if (sshort[i]==sshort[j]) {
+            offset[j]=i+1;
+            j++;
+            i++;
+        }else {
+            if (i==0) {
+                offset[j]=0;
+                j++;
+            }else i=offset[i-1];
+        }
+    }
+
+    int k=0;
+    int l=0;
+    while (k!=slong.size()) {
+        if (slong[k]==sshort[l]) {
+            k++;
+            l++;
+            if (l==sshort.size()) return true;
+        }else {
+            if (l==0) {
+                k++;
+                if (k==sshort.size()) return false;
+            }else {
+                l = offset[l-1];
+            }
+        }
+    }
+    return false;
+}
+
+bool check_is_offset(std::string s1, std::string s2)
+{
+    if (s1.size()!=s2.size()) return false;
+        std::string s2s2 = s2+s2;
+    return find_in_stirng(s1, s2s2);
+}
+
+int main()
+{
+    while (true)
+    {
+        std::cout<<"input 2 strings"<<std::endl;
+        std::string s1 = "abc";
+        std::string s2 = "cab";
+        std::cin>>s1>>s2;
+        bool result = check_is_offset(s1, s2);
+        std::cout<<(result ? std::string("they are rotatively same") : std::string("not same"))<<std::endl;
+    }
+    return 0;
+}

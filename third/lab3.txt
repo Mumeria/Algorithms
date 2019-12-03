@@ -1,0 +1,132 @@
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+
+class Heap
+{
+    private:
+        std::vector<int> heap;
+        int n=-1;
+        int d=2;
+    public:
+        Heap(int dim): d(dim){};
+        void add_element(int element);
+        int get_max();
+        int extract_num(int index);
+        int extract_max();
+        void change_key(int index, int value);
+        friend std::ostream& operator<< (std::ostream &out, Heap &heap);
+};
+
+std::ostream& operator<< (ostream &out, Heap &heap)
+{
+    int i = 1;
+    int last = 0;
+    int counter = 0;
+    while (counter<heap.heap.size()) {
+        for (int j=0; (j<(i-last))&&(counter<heap.heap.size()); j++) {
+            out<<heap.heap[counter]<<" ";
+            counter++;
+        }
+        out<<std::endl;
+        last= i;
+        i = i*heap.d+1;
+    }
+    return out;
+}
+
+void up(std::vector<int> &heap, int d, int n)
+{
+    int father_index = (n-1)/d;
+    if (father_index<0) return;
+    if (heap[father_index]<heap[n]) {
+        std::swap(heap[father_index], heap[n]);
+        up(heap, d, father_index);
+    }
+    return;
+}
+
+void Heap::add_element(int element)
+{
+    n++;
+    heap.push_back(element);
+    up(heap, d, n);
+}
+
+int Heap::get_max()
+{
+    if (n>=0) throw "n<0";
+    return heap[0];
+}
+
+int down(std::vector<int> &heap, int d, int n, bool move_empty=false)
+{
+    int chunk_begin_index = n*d+1;
+    int chunk_max_index = chunk_begin_index;
+    if (chunk_begin_index>=heap.size()) return n;
+    for (int i=chunk_begin_index; (i<heap.size())&&(i<chunk_begin_index+d); i++) {
+        if (heap[i]>heap[chunk_max_index]) chunk_max_index = i;
+    }
+    if (!move_empty) {
+        if (heap[chunk_max_index]<=heap[n]) return n;
+    }
+    std::swap(heap[n], heap[chunk_max_index]);
+    return down(heap, d, chunk_max_index);
+}
+
+int Heap::extract_num(int index)
+{
+    if (n<index) throw "n<index";
+    int value = heap[index];
+    std::swap(heap[n], heap[index]);
+    heap.pop_back();
+    n--;
+    heap[down(heap, d, index)];
+    return value;
+}
+
+int Heap::extract_max()
+{
+    return extract_num(0);
+}
+
+void Heap::change_key(int index, int value)
+{
+    if (n<index) throw "n<index";
+    if (value>=0) {
+        heap[index] += value;
+        up(heap, d, index);
+    }else {
+        heap[index] +=value;
+        down(heap, d, index, false);
+    }
+}
+
+int main()
+{
+    Heap heap(3);
+    while (true)
+    {
+        std::cout<<"> ";
+        char info;
+        std::cin>>info;
+        if (info=='e') return 0;
+        if (info=='a') {
+            int x;
+            cin>>x;
+            heap.add_element(x);
+            std::cout<<std::endl;
+        }
+        if (info=='p') std::cout<<heap<<std::endl;
+        if (info=='d') std::cout<<heap.extract_max()<<std::endl;
+        if (info=='c') {
+            int dif;
+            int index;
+            cin>>index>>dif;
+            heap.change_key(index, dif);
+        }
+    }
+    return 0;
+}

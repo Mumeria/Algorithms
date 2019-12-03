@@ -1,0 +1,159 @@
+#include <iostream>
+#include <vector>
+#include <random>
+using namespace std;
+
+template<class T>
+struct key_value
+{
+    bool key;
+    T value;
+};
+
+template<class T>
+struct list_node
+{
+    bool key;
+    T value;
+    list_node* next = nullptr;
+    list_node* prev = nullptr;
+};
+
+int generate_int()
+{
+    static std::random_device rd;
+    static std::mt19937 mt(rd());
+    static std::uniform_int_distribution<int> dist(2, 20);
+    return dist(mt);
+}
+
+void generate_ints(std::vector<key_value<int>> &data, int num)
+{
+    int n = num;
+    for (int i=0; i<n; i++) {
+        data.push_back({generate_int()%2, i});
+    }
+}
+
+void generate_ints(list_node<int>* &heads, int num)
+{
+    int n = num;
+    heads = new list_node<int>{generate_int()%2, 0};
+    auto head = heads;
+    for (int i=1; i<n; i++) {
+        list_node<int>* common = new list_node<int>{generate_int()%2, i};
+        head->next = common;
+        common->prev = head;
+        head = head->next;
+    }
+}
+
+list_node<int>* convert_to_linked(std::vector<key_value<int>> &data)
+{
+    list_node<int>* ret = new list_node<int>{data[0].key, data[0].value};
+    list_node<int>* head = ret;
+    for (int i=1; i<data.size(); i++) {
+        list_node<int>* temp = new list_node<int>{data[i].key, data[i].value};
+        temp->prev = ret;
+        ret->next = temp;
+        ret = temp;
+    }
+    return head;
+}
+
+template<class T>
+void stable_and_budget(std::vector<key_value<T>> &data, bool isRecursion=false, int start=-1)
+{
+    for (int i=1; i<data.size(); i++) {
+        if (data[i].key==0) {
+            int j=i;
+            while ((data[j].key!=data[j-1].key)&&(j>0)) {
+                std::swap(data[j], data[j-1]);
+                j--;
+            }
+        }
+    }
+}
+
+template<class T>
+void check(std::vector<key_value<T>> &data)
+{
+    bool fail = false;
+    bool stable = true;
+    for (int i=1; i<data.size(); i++) {
+        if (data[i-1].key>data[i].key) fail=true;
+        if ((data[i-1].value>data[i].value)&&(data[i-1].key==data[i].key)) stable=false;
+    }
+    if (fail) {
+        std::cout<<"Failed with n="<<data.size()<<std::endl;
+        return;
+    }
+    std::cout<<"Sorted with n="<<data.size()<<", stable="<<(stable ? std::string("true") : std::string("false"))<<std::endl;
+    std::cout<<"\n\n"<<std::endl;
+}
+
+template<class T>
+void linked_list(list_node<T>* head)
+{
+    list_node<T>* zeros = new list_node<T>{};
+    list_node<T>* ones = new list_node<T>{};
+    list_node<T>* zeros_s = zeros;
+    list_node<T>* ones_s = ones;
+    while (head!=nullptr) {
+        list_node<T>* next = head->next;
+        if (head->key) {
+            if (ones->prev==nullptr) {
+                ones_s = head;
+                head->next = ones;
+                ones->prev = head;
+            }else {
+                ones->prev->next = head;
+                head->next = ones;
+                head->prev = ones->prev;
+                ones->prev = head;
+            }
+        }else {
+            if (zeros->prev==nullptr) {
+                zeros_s = head;
+                head->next = zeros;
+                zeros->prev = head;
+            }else {
+                zeros->prev->next = head;
+                head->next = zeros;
+                head->prev = zeros->prev;
+                zeros->prev = head;
+            }
+        }
+        head = next;
+    }
+    zeros_s->prev = nullptr;
+    ones->prev->next = nullptr;
+    zeros->prev->next = ones_s;
+    ones_s->prev = zeros->prev;
+}
+
+template<class T>
+std::vector<key_value<int>> convert_to_vector(list_node<T>* head)
+{
+    std::vector<key_value<int>> result;
+    while (head!=nullptr) {
+        result.push_back(key_value<int>{head->key, head->value});
+        head = head->next;
+    }
+    return result;
+}
+
+
+int main()
+{
+    int NUM_OF_ELEMENTS=10000;
+    std::vector<key_value<int>> x;
+    generate_ints(x, NUM_OF_ELEMENTS);
+    int t = x;
+    stable_and_budget(t);
+    std::cout<<"STABLE AND BUDGET<<std::endl;
+    check(t);
+
+    
+    return 0;
+}
